@@ -14,29 +14,30 @@ const ThemeContext = createContext<{ variant?: Variants }>({})
 
 function Button({ variant = "primary", isLoading, children, className, ...rest }: ButtonProps) {
     return (
-        <View className={clsx(
-            "h-11 flex-row items-center justify-center rounded-lg gap-2 px-2",
-            {
-                "bg-lime-300": variant === "primary",
-                "bg-zinc-800": variant === "secondary",
-            },
-            className
-        )}
+
+        <TouchableOpacity
+            activeOpacity={0.7}
+            disabled={isLoading}
+            {...rest}
+             style={{flex:1, justifyContent: "center", alignItems: 'center', flexDirection: 'row' }}
         >
-            <TouchableOpacity
-                activeOpacity={0.7}
-                disabled={isLoading}
-                {...rest}
-                style={{width: '100%', height:'100%', justifyContent: "center", alignItems: 'center', display:'flex', flexDirection:'row', gap: 8}}
+            <View className={clsx(
+                "h-11 flex-row items-center justify-center rounded-lg gap-2 px-2",
+                {
+                    "bg-lime-300": variant === "primary",
+                    "bg-zinc-800": variant === "secondary",
+                },
+                className
+            )}
             >
 
                 <ThemeContext.Provider value={{ variant }}>
                     {isLoading ? <ActivityIndicator className={variant === "primary" ? "text-lime-950" : "text-zinc-200"} /> : children}
                 </ThemeContext.Provider>
+            </View>
 
+        </TouchableOpacity>
 
-            </TouchableOpacity>
-        </View>
     )
 }
 
