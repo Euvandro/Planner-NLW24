@@ -7,19 +7,21 @@ type Variants = "primary" | "secondary";
 
 type ButtonProps = TouchableOpacityProps & {
     variant?: Variants
-    isLoading?: boolean
+    isLoading?: boolean,
+    flex?: boolean,
 }
 
 const ThemeContext = createContext<{ variant?: Variants }>({})
 
-function Button({ variant = "primary", isLoading, children, className, ...rest }: ButtonProps) {
+function Button({ variant = "primary", isLoading, children, className, flex = false, ...rest }: ButtonProps) {
     return (
 
         <TouchableOpacity
             activeOpacity={0.7}
             disabled={isLoading}
             {...rest}
-             style={{flex:1, justifyContent: "center", alignItems: 'center', flexDirection: 'row' }}
+             style={{justifyContent: "center", alignItems: 'center', flexDirection: 'row', flex: flex ? 1 : 0}}
+             
         >
             <View className={clsx(
                 "h-11 flex-row items-center justify-center rounded-lg gap-2 px-2",
