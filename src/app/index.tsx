@@ -176,7 +176,7 @@ export default function Index() {
                 {stepForm === StepForm.ADD_EMAIL &&
                     <>
                         <View className='border-b py-3 border-zinc-800 '>
-                            <Button variant='secondary' onPress={() => setStepForm(StepForm.TRIP_DETAILS)}>
+                            <Button flex className='flex-1' variant='secondary' onPress={() => setStepForm(StepForm.TRIP_DETAILS)}>
                                 <Button.Title>Alterar local/data</Button.Title>
                                 <Settings2 color={colors.zinc[200]} size={20} />
                             </Button>
@@ -199,7 +199,7 @@ export default function Index() {
                 }
 
 
-                <Button onPress={handleNextStepForm} isLoading={isCreatingTrip}>
+                <Button flex className='flex-1' onPress={handleNextStepForm} isLoading={isCreatingTrip}>
                     <Button.Title>{stepForm === StepForm.TRIP_DETAILS ? 'Continuar' : 'Confirmar Viagem'}</Button.Title>
                     <ArrowRight color={colors.lime[950]} size={20} />
                 </Button>
@@ -216,7 +216,7 @@ export default function Index() {
                 <View className='gap-4 mt-4'>
                     <Calendar onDayPress={handleSelectDate} markedDates={selectedDates.dates} minDate={dayjs().toISOString()} />
 
-                    <Button onPress={() => setShowModal(MODAL.NONE)}>
+                    <Button flex className='flex-1' onPress={() => setShowModal(MODAL.NONE)}>
                         <Button.Title>Confirmar</Button.Title>
                     </Button>
                 </View>
@@ -248,7 +248,7 @@ export default function Index() {
                             onSubmitEditing={handleAddEmail}
                         />
                     </Input>
-                    <Button onPress={handleAddEmail}>
+                    <Button onPress={handleAddEmail} flex className='flex-1'>
                         <Button.Title>Convidar</Button.Title>
                     </Button>
                 </View>

@@ -14,6 +14,9 @@ import { Modal } from "@/components/modal";
 import { Calendar } from "@/components/calendar";
 import { DateData } from "react-native-calendars";
 import { DatesSelected, calendarUtils } from "@/utils/calendarUtils";
+import { validateInput } from "@/utils/validateInput";
+import { participantsServer } from "@/server/participants-server";
+import { tripStorage } from "@/storage/trip";
 
 export type TripData = TripDetails & { when: string }
 
@@ -21,11 +24,14 @@ enum MODAL {
     NONE = 0,
     UPDATE_TRIP = 1,
     CALENDAR = 2,
+    CONFIRM_ATTENDANCE = 3,
 }
+
+
 
 export default function Trip() {
 
-    const tripId = useLocalSearchParams<{ id: string }>().id;
+    const tripParams = useLocalSearchParams<{ id: string, participant?: string }>();
 
     const [isLoadingTrip, setIsLoadingTrip] = useState(true);
     const [isUpdatingTrip, setIsUpdatingTrip] = useState(false);
@@ -53,11 +59,16 @@ export default function Trip() {
     async function getTripDetails() {
         try {
             setIsLoadingTrip(true);
-            if (!tripId) {
+
+            if(tripParams.participant){
+                setShowModal(MODAL.CONFIRM_ATTENDANCE);
+            }
+
+            if (!tripParams.id) {
                 return router.back();
             }
 
-            const trip = await tripServer.getById(tripId);
+            const trip = await tripServer.getById(tripParams.id);
 
             const maxLenghtDestination = 14;
             const destination = trip.destination.length > maxLenghtDestination ? trip.destination.slice(0, maxLenghtDestination) + "..." : trip.destination;
@@ -85,7 +96,7 @@ export default function Trip() {
 
     async function handleUpdateTrip() {
         try {
-            if (!tripId) return;
+            if (!tripParams.id) return;
 
             if (!destination || !selectedDates.startsAt || !selectedDates.endsAt) {
                 return Alert.alert("Atualizar viagem", "Lembre-se de, além de preencher o destino, selecionar as datas de inicio e fim.")
@@ -94,7 +105,7 @@ export default function Trip() {
             setIsUpdatingTrip(true);
 
             await tripServer.update({
-                id: tripId,
+                id: tripParams.id,
                 destination,
                 starts_at: dayjs(selectedDates.startsAt.dateString).toString(),
                 ends_at: dayjs(selectedDates.endsAt.dateString).toString(),
@@ -113,14 +124,44 @@ export default function Trip() {
         }
     }
 
+    async function handleRemoveTrip(){
+        try {
+            Alert.alert("Remover viagem", "Tem certeza que deseja remover a viagem?", [{text:'Não', style:'cancel'}, {text:"Sim", onPress: async() => {
+                await tripStorage.remove();
+                router.navigate("/");
+            }}])
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
     async function handleConfirmAttendance(){
         try {
+
+            if(!tripParams.participant || !tripParams.id) return;
             
+            if(!guestName.trim() || guestEmail.trim()) return Alert.alert("Confirmação", "Preencha todos os campos para confirmar sua presença.");
+            
+            if(!validateInput.email(guestEmail.trim())) return Alert.alert("Confirmação", "E-mail inválido.");
+
+            setIsConfirmingAttendance(true);
+
+            await participantsServer.confirmTripByParticipantId({
+                participantId: tripParams.participant,
+                name: guestName,
+                email: guestEmail.trim(),
+            })
+
+            Alert.alert("Confirmação", "Sua presença foi confirmada com sucesso!");
+
+            await tripStorage.save(tripParams.id);
+
+            setShowModal(MODAL.NONE);
 
 
         } catch (error) {
             console.log(error);
-            
+            Alert.alert("Confirmação", "Não foi possível confirmar sua presença!")
         }finally{
             setIsConfirmingAttendance(false);
         }
@@ -189,9 +230,13 @@ export default function Trip() {
                         <Input.Field value={selectedDates.formatDatesInText} placeholder="Quando?" onPressIn={() => setShowModal(MODAL.CALENDAR)} onFocus={() => Keyboard.dismiss()} />
                     </Input>
 
-                    <Button onPress={handleUpdateTrip} isLoading={isUpdatingTrip}>
+                    <Button className="flex-1" flex onPress={handleUpdateTrip} isLoading={isUpdatingTrip}>
                         <Button.Title>Atualizar</Button.Title>
                     </Button>
+
+                    <TouchableOpacity activeOpacity={0.8} onPress={handleRemoveTrip}>
+                        <Text className="text-red-400 text-center mt-6">Remover viagem</Text>
+                    </TouchableOpacity>
 
                 </View>
             </Modal>
@@ -200,13 +245,13 @@ export default function Trip() {
                 <View className='gap-4 mt-4'>
                     <Calendar onDayPress={handleSelectDate} markedDates={selectedDates.dates} minDate={dayjs().toISOString()} />
 
-                    <Button onPress={() => setShowModal(MODAL.UPDATE_TRIP)}>
+                    <Button flex className="flex-1" onPress={() => setShowModal(MODAL.UPDATE_TRIP)}>
                         <Button.Title>Confirmar</Button.Title>
                     </Button>
                 </View>
             </Modal>
 
-            <Modal title="Confirmar presença" visible>
+            <Modal title="Confirmar presença" visible={showModal === MODAL.CONFIRM_ATTENDANCE}>
                 <View className="gap-4 mt-4">
                     <Text className="text-zinc-400 font-regular leading-6 my-2">
                         Você foi convidado(a) para participar de uma viagem para 
@@ -218,15 +263,15 @@ export default function Trip() {
 
                     <Input variant="secondary">
                         <User color={colors.zinc[400]} size={20}/>
-                        <Input.Field placeholder="Seu nome completo"/>
+                        <Input.Field placeholder="Seu nome completo" value={guestName} onChangeText={setGuestName}/>
                     </Input>
 
                     <Input variant="secondary">
-                        <Mail color={colors.zinc[400]} size={20}/>
-                        <Input.Field placeholder="E-mail de confirmação"/>
+                        <Mail color={colors.zinc[400]} size={20} />
+                        <Input.Field placeholder="E-mail de confirmação" value={guestEmail} onChangeText={setGuestEmail}/>
                     </Input>
 
-                    <Button flex className="flex-1" isLoading={isConfirmingAttendance}>
+                    <Button onPress={handleConfirmAttendance} flex className="flex-1" isLoading={isConfirmingAttendance}>
                         <Button.Title>Confirmar minha presença</Button.Title>
                     </Button>
                 </View>
