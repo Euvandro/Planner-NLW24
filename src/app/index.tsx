@@ -197,9 +197,9 @@ export default function Index() {
                         </Input>
                     </>
                 }
+                
 
-
-                <Button flex className='flex-1' onPress={handleNextStepForm} isLoading={isCreatingTrip}>
+                <Button className='flex-1' onPress={handleNextStepForm} isLoading={isCreatingTrip}>
                     <Button.Title>{stepForm === StepForm.TRIP_DETAILS ? 'Continuar' : 'Confirmar Viagem'}</Button.Title>
                     <ArrowRight color={colors.lime[950]} size={20} />
                 </Button>
